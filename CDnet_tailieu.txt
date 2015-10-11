@@ -1,0 +1,202 @@
+1/ CSDL:QUAN LY SINH VIEN
+create database QLSV
+go
+use QLSV
+if exists (select * from dbo.sysobjects where id = object_id(N'[dbo].[SINHVIEN]') and OBJECTPROPERTY(id, N'IsUserTable') = 1)
+drop table SINHVIEN
+create table SINHVIEN(
+	--maSo int IDENTITY(1,1) PRIMARY KEY,
+	maSo nvarchar(50) PRIMARY KEY,
+	hoTen nvarchar(50),
+	ngaySinh datetime,
+	gioiTinh bit,
+	diaChi nvarchar(100),
+            dienThoai nvarchar(100),
+            khoa nvarchar(100),
+)
+select * from SINHVIEN
+insert into SINHVIEN values('SV001','Nguyen Chi Thien','10-24-1992',1,'19NHT',09444444,'CNTT')
+insert into SINHVIEN values('SV002','Dan Truong','11-04-1991',1,'19 NHT',09444444,'CNTT')
+insert into SINHVIEN values('SV003','Cam Ly','07-13-1990',0,'19 NHT',09444444,'CNTT')
+insert into SINHVIEN values('SV004','Pham Bang Bang','02-11-1993',0,'19 NHT',09444444,'CNTT')
+2/ SINH VIEN DTO
+namespace DTO
+{
+    public class SinhVienDTO
+    {
+ string maSo;
+public string MaSo
+
+{
+  get { return maSo; }
+  set { maSo = value; }
+}
+string hoTen;
+
+public string HoTen
+{
+    get { return hoTen; }
+    set { hoTen = value; }
+}
+string gioiTinh;
+
+public string GioiTinh
+{
+    get { return gioiTinh; }
+    set { gioiTinh = value; }
+}
+string ngaySinh;
+
+public string NgaySinh
+{
+    get { return ngaySinh; }
+    set { ngaySinh = value; }
+}
+string dienThoai;
+
+public string Email
+{
+    get { return dienThoai; }
+    set { dienThoai = value; }
+}
+string khoa;
+
+public string Khoa
+{
+    get { return khoa; }
+    set { khoa = value; }
+}
+    }
+}
+3/ SINH VIEN DAO
+using DTO;
+using APP;
+using System.Data;
+namespace DAO
+{
+    public class SinhVienDAO
+    {
+        DataProvider dataprovider = new DataProvider();
+        public SinhVienDAO()
+        {
+            dataprovider.OpendConnec();
+        }
+        public DataTable ListSinhVien()
+        {
+            DataTable listSV = new DataTable();
+            string    sql = "select* from SINHVIEN";
+             listSV= dataprovider.executeReader(sql);
+            return listSV;
+        }
+        public void deleteSinhVien(string ma)
+        {
+            string sql = "delete from SINHVIEN where [maSo]='" + ma + "'"; 
+            dataprovider.executeNonQuery(sql);
+        }
+    }
+}
+4/ SINH VIEN APP( DataProvider)
+using System.Data;
+using System.Data.SqlClient;
+
+namespace APP
+{
+    public class DataProvider
+    {
+        private static string Connectionstring;
+        public static string Connectionstring1
+        {
+            get { return DataProvider.Connectionstring; }
+            set { DataProvider.Connectionstring = value; }
+        }
+        private SqlConnection connection;
+        private SqlCommand command;
+        private SqlDataAdapter dataAdapter;
+        public void OpendConnec()
+        {
+            connection = new SqlConnection(Connectionstring1);
+            connection.Open();
+        }
+        public void CloseConec()
+        {
+            connection.Close();
+        }
+        public DataTable executeReader(string sql)
+        {
+            DataTable tb = new DataTable();
+            SqlDataAdapter adapter = new SqlDataAdapter(sql, connection);
+            adapter.Fill(tb);
+            return tb;
+        }
+        public void executeNonQuery(string sql)
+        {
+            command = new SqlCommand(sql, connection);
+            command.ExecuteNonQuery();
+        }
+    }
+}
+5/ SINH VIEN BUS
+using DAO;
+using DTO;
+using System.Data;
+namespace BUS
+{
+    public class SinhVienBUS
+    {
+        SinhVienDAO dataaccess = new SinhVienDAO();
+        public DataTable ListSV()
+        {
+            return dataaccess.ListSinhVien();
+
+        }
+        public void deleteSV(string ma)
+        {
+            dataaccess.deleteSinhVien(ma);
+        }
+    }
+}
+6/ FORM QUAN LY SINH VIEN
+using DTO; 
+using DAO;
+using BUS;
+using APP;
+using System.Data.SqlClient;
+using System.Data;
+namespace QLSV
+*****...................................
+        SinhVienBUS bus;
+        SinhVienDTO info;
+        private void Form1_Load(object sender, EventArgs e)
+        {
+         string sql = "Data Source=NGUYENCUONG; Initial Catalog =QLSV; Integrated Security =SSPI";
+            DataProvider.Connectionstring1 = sql;
+            DataTable table = new DataTable();
+            bus = new SinhVienBUS();
+            table = bus.ListSV();
+            dataGridView1.DataSource = table;
+        }
+//XOA SINH VIEN
+        private void btXoa_Click(object sender, EventArgs e)
+        {
+            info =new SinhVienDTO();
+            bus = new SinhVienBUS();
+            DataTable tb = new DataTable();
+            string masv;
+            int chiso = -1;
+            chiso = dataGridView1.SelectedCells[0].RowIndex;
+            tb = (DataTable)dataGridView1.DataSource;
+            masv = (string)tb.Rows[chiso].ItemArray[0];
+            try
+            {
+                bus.deleteSV(masv);
+            }
+            catch(Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+            }
+            MessageBox.Show("Xóa thành công!");
+            tb = bus.ListSV();
+            dataGridView1.DataSource = tb;
+        }
+    }
+}
